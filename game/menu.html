@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>apoc | play free online</title>
+		<link rel="icon" href="assets/player_forward.gif"/>
+		<style>
+			body {
+				background-color: black;
+				margin: 0;
+			}
+			#dispscreen {
+				height: 700px;
+				width: 900px;
+				position: absolute;
+				margin-left: auto;
+				margin-right: auto;
+				margin-top: auto;
+				margin-bottom: auto;
+				left: 0;
+				right: 0;
+				background-image: url("assets/gamecover.jpg");
+			}
+			#menu {
+				height: 100px;
+				width: 200px;
+				position: absolute;
+				top: 300px;
+				left: 500px;
+				mix-blend-mode: screen;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="dispscreen"><div id="menu"></div></div>
+		<audio id="music" autoplay loop><source src="assets/bensound-theduel.mp3"></audio><!--CREDIT BENSOUND!!!-->
+		<script>
+			map = {};
+			selection = 1;
+			function credits() {
+				document.getElementById("menu").style.opacity = "0";
+				document.getElementById("dispscreen").style.backgroundImage = "url('assets/credits.jpg')";
+				onkeydown = onkeyup = function(e){
+					e = e || event;
+					map[e.keyCode] = e.type == 'keydown';
+				}
+				if (map[13]) { document.getElementById("menu").style.opacity = "1";document.getElementById("dispscreen").style.backgroundImage = "url('assets/gamecover.jpg')"; setTimeout(animate, 150); } else { setTimeout(credits, 150); }
+			}
+			function controls() {
+				document.getElementById("menu").style.opacity = "0";
+				document.getElementById("dispscreen").style.backgroundImage = "url('assets/controls.jpg')";
+				onkeydown = onkeyup = function(e){
+					e = e || event;
+					map[e.keyCode] = e.type == 'keydown';
+				}
+				if (map[13]) { document.getElementById("menu").style.opacity = "1";document.getElementById("dispscreen").style.backgroundImage = "url('assets/gamecover.jpg')"; setTimeout(animate, 150); } else { setTimeout(controls, 150); }
+			}
+			function animate() {
+				onkeydown = onkeyup = function(e){
+					e = e || event;
+					map[e.keyCode] = e.type == 'keydown';
+				}
+				if (map[40]) {
+					if (selection < 3) {
+						selection++;
+					}
+				}
+				if (map[38]) {
+					if (selection > 1) {
+						selection-=1;
+					}
+				}
+				document.getElementById("menu").style.backgroundImage = "url('assets/menu" + selection.toString() + ".jpg'";
+				if (map[13]) {
+					if (selection == 1) {
+						document.getElementById("music").pause();
+						document.getElementById("dispscreen").style.backgroundImage = "url('assets/message.gif')";
+						document.getElementById("menu").remove();
+						count = 0;
+						function wait() {
+							if (count == 2050) {
+								location.replace("skript.html");
+							}
+							else {
+								count++;
+								setTimeout(wait, 1);
+							}
+						}
+						wait();
+					}
+					if (selection == 2) {
+						setTimeout( controls, 150 );
+					}
+					if (selection == 3) {
+						setTimeout( credits, 150 );
+					}
+				}
+				else {
+					setTimeout(animate, 150);
+				}
+			}
+			animate();
+		</script>
+	</body>
+</html>

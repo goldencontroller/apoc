@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>apoc | play free online</title>
+		<link rel="icon" href="assets/player_forward.gif"/>
+		<style>
+			body {
+				background-color: black;
+				margin: 0;
+			}
+			#gamescreen {
+				height: 700px;
+				width: 900px;
+				/*background-color: darkgreen;*/
+				background-image: url("assets/background.jpg");
+				background-size: 900px 700px;
+				position: absolute;
+				margin-left: auto;
+				margin-right: auto;
+				margin-top: auto;
+				margin-bottom: auto;
+				left: 0;
+				right: 0;
+			}
+			#player {/*
+				outline-style: solid;
+				outline-width: 3px;
+				outline-color: red;*/
+				position: absolute;
+				/*background-image: url("assets/player_forward.gif");*/
+				background-size: 50px 50px;
+				/*-webkit-filter: drop-shadow(0px -5px 10px black);
+  				filter: drop-shadow(0px -5px 10px black);*/
+			}
+			.laserbeam {
+				position: absolute;
+				background-image: url("assets/laser beam.gif");
+				background-size: 4px 40px;
+			}
+			.zombie {
+				position: absolute;
+				background-image: url("assets/zombie.gif");
+				background-size: 50px 50px;
+				/*-webkit-filter: drop-shadow(0px -5px 10px black);
+  				filter: drop-shadow(0px -5px 10px black);*/
+			}
+			#chargebar {
+				position: absolute;
+				top: 10px;
+				left: 690px;
+				/*background-color: #0892D0;*/
+				background-image: url("assets/energybar.gif");
+				background-repeat: repeat;
+				background-size: 200px 20px;
+				height: 20px;
+				width: 200px;
+				box-shadow: 0px 0px 10px 5px #0892D0;
+				mix-blend-mode: screen;
+			}
+			#killsdisplay {
+				position: absolute;
+				top: 37px;
+				left: 690px;
+				font-size: 25px;
+				font-family: Trebuchet MS;
+				color: darkred;
+				text-shadow: 0px 0px 5px black;
+			}
+		</style>
+	</head>
+	<body>
+		<center>
+			<div id="gamescreen">
+				<div id="player"></div>
+				<!--<div class="zombie" style="width: 50px; height: 50px; top: 0px; left: 0px;" data-lives="1"></div>-->
+				<div id="chargebar"></div>
+				<div id="killsdisplay">0</div>
+			</div>
+		</center>
+		<audio><source id="sfx" type="audio/mpeg"/></audio>
+		<audio id="music" autoplay loop><source src="assets/bensound-theduel.mp3"></audio><!--CREDIT BENSOUND!!!-->
+		<script>
+			jumping = 0;
+			k = "";
+			velocity_up = 0;
+			x = 50;
+			y = 600;
+			document.getElementById("player").style.height = "50px";
+			document.getElementById("player").style.width = "50px";
+			document.getElementById("player").style.backgroundImage = "url('assets/player_forward.gif')";
+			gameover = false;
+			
+			function sfx(source) {
+				var audio = new Audio(source);
+				audio.play();
+			}
+			
+			function touching(item1, item2) {
+				if (parseInt(item1.style.top.split("px")[0]) + parseInt(item1.style.height.split("px")[0]) >= parseInt(item2.style.top.split("px")[0])) {
+					if (parseInt(item1.style.left.split("px")[0]) + parseInt(item1.style.width.split("px")[0]) >= parseInt(item2.style.left.split("px")[0])) {
+						if (parseInt(item1.style.top.split("px")[0]) <= parseInt(item2.style.top.split("px")[0]) + parseInt(item2.style.height.split("px")[0])) {
+							if (parseInt(item1.style.left.split("px")[0]) <= parseInt(item2.style.left.split("px")[0]) + parseInt(item2.style.width.split("px")[0])) {
+								return true;
+							}
+						}
+					}
+				}
+				else { return false; }
+			}
+			function touching_direction(item1, item2) {
+				item1_bottom = parseInt(item1.style.top.split("px")[0]) + parseInt(item1.style.height.split("px")[0]);
+				item2_bottom = parseInt(item2.style.top.split("px")[0]) + parseInt(item2.style.height.split("px")[0]);
+				item1_right = parseInt(item1.style.left.split("px")[0]) + parseInt(item1.style.width.split("px")[0]);
+				item2_right = parseInt(item2.style.left.split("px")[0]) + parseInt(item2.style.width.split("px")[0]);
+				b_collision = item1_bottom - parseInt(item2.style.top.split("px")[0]);
+				t_collision = item2_bottom - parseInt(item1.style.top.split("px")[0]);
+				l_collision = item1_right - parseInt(item2.style.left.split("px")[0]);
+				r_collision = item2_right - parseInt(item1.style.left.split("px")[0]);
+				if (touching(item1,item2)){
+				if (t_collision < b_collision && t_collision < l_collision && t_collision < r_collision ) {
+					return "top";
+					console.log("h");
+				}
+				if (b_collision < t_collision && b_collision < l_collision && b_collision < r_collision) {
+					return "bottom";
+				}
+				if (l_collision < r_collision && l_collision < t_collision && l_collision < b_collision) {
+					return "left";
+				}
+				if (r_collision < l_collision && r_collision < t_collision && r_collision < b_collision ) {
+					return "right";
+				}
+				}
+				else { return "not_touchign"; }
+			}
+			
+			map = {};
+			laser_reload = 0;
+			clock = 0;
+			kills = 0;
+			charge = 50;
+			lockdown = false;
+			
+			function gameoverscreen() {
+				sfx("assets/death.mp3");
+				document.getElementById("music").pause();
+				document.getElementById("gamescreen").innerHTML = "<div id='killsdisplay'></div>";
+				document.getElementById("gamescreen").style.backgroundImage = "url('assets/endscreen.gif')";
+				document.getElementById("killsdisplay").style.top = "350px"
+				document.getElementById("killsdisplay").style.left = "460px";
+				c = 0;
+				function wait() { c++; if (c == 10) { document.getElementById("killsdisplay").innerText = kills; } else { setTimeout(wait, 150); } }
+				wait();
+			}
+			
+			function reloadgame() {
+				
+				clock++;
+				
+				onkeydown = onkeyup = function(e){
+					e = e || event;
+					map[e.keyCode] = e.type == 'keydown';
+				}
+				
+				//console.log(map);
+				
+				if (map[39]) {
+					if (x < 850) { x++; }
+					document.getElementById("player").style.backgroundImage = "url('assets/player_right.gif')";
+				}
+				
+				if (map[37]) {
+					if (x > 0) { x-=1; }
+					document.getElementById("player").style.backgroundImage = "url('assets/player_left.gif')";
+				}
+				
+				if (!(map[37]) && !(map[39])) {
+					document.getElementById("player").style.backgroundImage = "url('assets/player_forward.gif')";
+					if (map[88] && laser_reload == 0) {
+						if (charge > 0 && lockdown == false) {
+							laser_reload = 50;
+							laser_element = "<div class='laserbeam' style='width: 4px; height: 40px; mix-blend-mode: screen; top:" + (y - 30).toString() + "px; left: " + (x + 41.4).toString() + "px;'></div>";
+							document.getElementById("gamescreen").innerHTML += laser_element;
+							charge -= 1;
+							sfx("assets/laserblast.mp3");
+						}
+					}
+				}
+				
+				if (laser_reload > 0) { laser_reload -= 1; }
+				
+				document.getElementById("player").style.left = x.toString() + "px";
+				document.getElementById("player").style.top = y.toString() + "px";
+				
+				i = 0;
+				
+				while (i < document.getElementsByClassName("laserbeam").length) {
+					if (parseInt(document.getElementsByClassName("laserbeam")[i].style.top.split("px")[0]) > 0) {
+						document.getElementsByClassName("laserbeam")[i].style.top = (parseInt(document.getElementsByClassName("laserbeam")[i].style.top.split("px")[0]) - 4).toString() + "px";
+						i++;
+					}
+					else { document.getElementsByClassName("laserbeam")[i].remove(); }
+				}
+				
+				if (clock % 5 == 0) {
+					if (Math.random() > 0.99) {
+						if (Math.random() > 0.1) {
+							zombieelement = '<div class="zombie" style="width: 50px; height: 50px; top: 0px; left: ' + (Math.floor(Math.random() * 850)).toString() + 'px;" data-lives="1"></div>';
+							document.getElementById("gamescreen").innerHTML += zombieelement;
+						}
+						else {
+							if (Math.random() > 0.25) {
+								zombieelement = '<div class="zombie" style="width: 50px; height: 50px; top: 0px; left: ' + (Math.floor(Math.random() * 850)).toString() + 'px; background-image: url(\'assets/redzombie.gif\')" data-lives="2"></div>';
+								document.getElementById("gamescreen").innerHTML += zombieelement;
+							} else {
+								zombieelement = '<div class="zombie" style="width: 50px; height: 50px; top: 0px; left: ' + (Math.floor(Math.random() * 850)).toString() + 'px; background-image: url(\'assets/purplezombie.gif\')" data-lives="3"></div>';
+								document.getElementById("gamescreen").innerHTML += zombieelement;
+							}
+						}
+					}
+				}
+				
+				i = 0;
+				
+				while (i < document.getElementsByClassName("zombie").length) {
+					if (parseInt(document.getElementsByClassName("zombie")[i].style.top.split("px")[0]) < 630 && document.getElementsByClassName("zombie")[i].dataset.lives > 0) {
+						if (touching(document.getElementsByClassName("zombie")[i], document.getElementById("player"))) { gameover = true; }
+						if (clock % 5 == 0) {
+							document.getElementsByClassName("zombie")[i].style.top = (parseInt(document.getElementsByClassName("zombie")[i].style.top.split("px")[0]) + 1).toString() + "px";
+							for (j = 0; j < document.getElementsByClassName("laserbeam").length; j++) {
+								if (touching(document.getElementsByClassName("laserbeam")[j], document.getElementsByClassName("zombie")[i])) {
+									document.getElementsByClassName("zombie")[i].dataset.lives = parseInt(document.getElementsByClassName("zombie")[i].dataset.lives - 1).toString();
+									document.getElementsByClassName("laserbeam")[j].remove();
+								}
+							}
+							if (document.getElementsByClassName("zombie")[i].dataset.lives == 0) {
+								document.getElementsByClassName("zombie")[i].remove();
+								kills++;
+								i -= 1;
+								document.getElementById("killsdisplay").innerHTML = kills;
+								sfx("assets/zombiedeath.mp3");
+							}
+						}
+						i++;
+					}
+					else { document.getElementsByClassName("zombie")[i].remove(); gameover = true; }
+					
+				}
+				
+				document.getElementById("chargebar").style.width = (charge * 4).toString() + "px";
+				
+				if (charge <= 0) {
+					lockdown = true;
+				}
+				if (lockdown == true) {
+					if (charge < 50) { charge+=0.02; } else { lockdown = false }
+				}
+				
+				if (gameover) { gameoverscreen(); } else { setTimeout(reloadgame, 1); }
+				//requestAnimationFrame(load);
+			
+			}
+			reloadgame();
+		</script>
+	</body>
+</html>
